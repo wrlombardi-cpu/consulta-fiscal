@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Consulta Fiscal IBPT - Oficial</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f8fafc; display: flex; justify-content: center; padding: 40px; }
+        .box { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 100%; max-width: 450px; }
+        h2 { color: #2563eb; text-align: center; margin-bottom: 20px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; color: #475569; }
+        input, select, button { width: 100%; padding: 12px; margin-bottom: 15px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 16px; box-sizing: border-box; }
+        button { background: #2563eb; color: white; border: none; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        button:hover { background: #1d4ed8; }
+        .result { display: none; margin-top: 20px; padding: 15px; background: #f1f5f9; border-left: 5px solid #2563eb; border-radius: 4px; }
+        .res-title { font-weight: bold; color: #1e293b; text-transform: uppercase; margin-bottom: 10px; }
+        .val { color: #2563eb; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="box">
+    <h2>Consulta ICMS SP</h2>
+    
+    <label>NCM (8 dígitos)</label>
+    <input type="text" id="ncm" placeholder="Ex: 02013000" maxlength="8">
+    
+    <label>Regime Tributário</label>
+    <select id="regime">
+        <option value="normal">Lucro Real / Presumido (CST)</option>
+        <option value="simples">Simples Nacional (CSOSN)</option>
+    </select>
+    
+    <button onclick="buscar()">Consultar Agora</button>
+
+    <div id="resultado" class="result">
+        <div id="res_desc" class="res-title"></div>
+        <p>Carga Estadual: <span id="res_aliq" class="val"></span></p>
+        <p>Carga Federal: <span id="res_fed" class="val"></span></p>
+        <p><strong>Sugestão:</strong> <span id="res_cst" style="background:#1e293b; color:white; padding:3px 8px; border-radius:4px;"></span></p>
+    </div>
+</div>
+
+<script>
+    const TOKEN = "ajNkjEAtR2j3scoytI0zlb_3kGHIsL0m2JAxOxpOsr_zXC0vxh_wKQGvTc13BR-8";
+    const CNPJ = "11370157000125";
+
+    async function buscar() {
+        const ncm = document.getElementById("ncm").value.replace(/\D/g, '');
+        const regime = document.getElementById("regime").value;
+        const div = document.getElementById("resultado");
+
+        if (ncm.length !== 8) return alert("Digite o NCM completo.");
+
+        const url = `https://api.maino.com.br/v1/produtos?token=${TOKEN}&cnpj=${CNPJ}&codigo=${ncm}&uf=SP&ex=0`;
+
+        try {
+            const res = await fetch(url);
+            const data = await res.json();
+
+            if (data.error) throw new Error(data.error);
+
+            document.getElementById("res_desc").innerText = data.Descricao;
+            document.getElementById("res_aliq").innerText = data.Estadual + "%";
+            document.getElementById("res_fed").innerText = data.FederalNacional + "%";
+
+            // Lógica Simples de CST
+            let cst = "000";
+            if (data.Estadual == 0) cst = "040";
+            else if (data.Estadual < 18) cst = "020";
+
+            document.getElementById("res_cst").innerText = (regime === "simples") ? "CSOSN 102" : "CST " + cst;
+            div.style.display = "block";
+
+        } catch (e) {
+            alert("Erro na consulta: Verifique se você está acessando via um link (http/https) e não direto do arquivo local.");
+        }
+    }
+</script>
+
+</body>
+</html>
